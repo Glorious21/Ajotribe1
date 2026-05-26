@@ -11,7 +11,7 @@ const router = Router();
 const otpLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3,
-  keyGenerator: (req) => (req.body as { phone_number?: string }).phone_number ?? req.ip ?? 'unknown',
+  keyGenerator: (req) => (req.body as { phone_number?: string }).phone_number ?? 'unknown',
   message: { error: 'Too many OTP requests. Try again in one hour.' },
   standardHeaders: true,
   legacyHeaders: false,
