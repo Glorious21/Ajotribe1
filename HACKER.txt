@@ -1,0 +1,291 @@
+# Ajotribe — Digital Ajo Circle App
+
+## Project Overview
+Ajotribe is a mobile app that digitises rotating savings circles (ajo/esusu/adashi) for Nigerian market women using Bitcoin Lightning, Nostr identity, and naira onramp/offramp. Users never see Bitcoin, Lightning, or crypto — only naira, their circle, and their savings.
+
+**Primary user:** Mama Tunde — Lagos market woman, WhatsApp user, GTBank account, no crypto knowledge required.
+
+**Core promise:** Put naira in. Get naira out. The circle handles itself trustlessly in between.
+
+---
+
+## Tech Stack
+
+### Frontend
+- React Native (Expo) — cross-platform mobile app
+- TypeScript — strict mode enabled
+- NativeWind — Tailwind CSS for React Native styling
+- Expo Secure Store — encrypted device storage for Nostr keypair
+
+### Identity Layer
+- Nostr — NDK (Nostr Development Kit)
+- NIP-29 — closed groups for circles
+- NIP-60 — wallet storage on Nostr
+- Keypair generated on device, stored in Expo Secure Store
+- PIN-encrypted cloud backup via Expo FileSystem + user's cloud
+
+### Wallet Layer
+- Breez SDK Liquid — self-custodial Lightning wallet per user
+- Package: `@breeztech/react-native-breez-sdk-liquid`
+- USDT stable balance support on Liquid network
+- Lightning address per user tied to phone number
+
+### Conversion Layer
+- Bitnob API — primary naira ↔ sats conversion
+- Mavapay API — backup NGN payout rail
+- Paystack — naira collection (bank transfer detection)
+
+### Backend
+- Node.js + Express — REST API
+- PostgreSQL — circle data, member records, contribution tracking
+- Redis — session management, rate limiting
+- Webhooks — Bitnob payment detection, Paystack inbound transfers
+
+### Post-Hackathon Roadmap (DO NOT BUILD NOW)
+- AI assistant — Anthropic Claude API in Pidgin/Yoruba
+- SMS notifications — Africa's Talking
+- Push notifications — Expo Notifications
+- WhatsApp bot — viral growth channel
+- USSD — feature phone access
+
+---
+
+## Project Structure
+
+```
+ajotribe/
+├── app/                    # React Native Expo app
+│   ├── (auth)/             # Registration and OTP screens
+│   ├── (circle)/           # Circle creation, dashboard, management
+│   ├── (wallet)/           # Savings view, contribution, collection
+│   └── components/         # Shared UI components
+├── backend/
+│   ├── routes/             # API endpoints
+│   ├── services/           # Breez, Bitnob, Nostr integrations
+│   ├── models/             # Database models
+│   └── webhooks/           # Payment detection handlers
+├── nostr/                  # Nostr integration helpers
+│   ├── identity.ts         # Keypair generation and storage
+│   ├── circles.ts          # NIP-29 group management
+│   └── events.ts           # Signed contribution event publishing
+└── CLAUDE.md
+```
+
+---
+
+## Bash Commands
+
+```bash
+# Frontend
+cd app
+npx expo start              # Start Expo dev server
+npx expo run:android        # Run on Android
+npx expo run:ios            # Run on iOS
+npx tsc --noEmit            # TypeScript check
+
+# Backend
+cd backend
+npm run dev                 # Start backend with nodemon
+npm run build               # Compile TypeScript
+npm test                    # Run test suite
+npm run db:migrate          # Run database migrations
+npm run db:seed             # Seed test data
+
+# Both
+npm run lint                # ESLint check
+npm run format              # Prettier format
+```
+
+---
+
+## Code Style
+
+- TypeScript strict mode — no `any` types
+- ES modules (`import/export`) — never CommonJS `require`
+- Destructure imports: `import { foo } from 'bar'`
+- Async/await — never raw Promises or callbacks
+- Error handling — always try/catch on external API calls
+- No inline comments explaining what code does — only why
+- Component files: PascalCase (`CircleDashboard.tsx`)
+- Utility files: camelCase (`formatNaira.ts`)
+- Constants: SCREAMING_SNAKE_CASE
+
+---
+
+## Language and UX Rules — CRITICAL
+
+These are the most important rules in this file. Never violate them.
+
+**Never show these words to users:**
+- Bitcoin, Lightning, sats, satoshis, wallet, crypto, blockchain
+- Nostr, keypair, nsec, npub, relay
+- Lightning address, BOLT11, invoice
+
+**Always use these words instead:**
+- "Your savings" not "your wallet"
+- "Your circle" not "your group"
+- "Contribute" or "pay your own" not "send payment"
+- "Collecting" not "receiving Lightning payment"
+- "Your money don enter" not "transaction confirmed"
+- "₦10,000" not "0.000023 BTC" or any sat amount
+- "Your turn is Week 7" not "slot index 6"
+
+**All user-facing text must:**
+- Default to Nigerian Pidgin
+- Be understandable by someone who has never used a financial app
+- Pass the Mama Tunde test: would a Lagos market woman understand this in 10 seconds?
+- Use ₦ for all amounts — never sats, never USD unless user explicitly chose USD circle
+
+---
+
+## Core User Flows
+
+### 1. Registration
+Phone number → OTP → Nostr keypair generated silently on device → Breez wallet initialised → user lands on home screen
+
+### 2. Circle Creation
+Organiser taps "Create Circle" → sets name, amount (₦), frequency, size, start date, rules, slot order → circle created as NIP-29 Nostr group → invite link generated
+
+### 3. Joining a Circle
+Member receives invite link → opens app → phone number + OTP → sees circle preview → pays security deposit if required → slot assigned → added to NIP-29 group
+
+### 4. Contributing
+Member opens app → taps Pay → transfers naira via bank transfer → Paystack webhook fires → Bitnob converts naira to sats → sats credited to member's Breez wallet → signed Nostr event published → dashboard updates in real time
+
+### 5. Collection
+Rotation triggers automatically on schedule → Breez sends Lightning payment to collector's wallet → Bitnob converts sats to naira → bank transfer fires to collector's account → Nostr completion event published → dashboard updates
+
+---
+
+## API Integrations
+
+### Breez SDK Liquid
+- Init wallet on user registration
+- Receive Lightning payments (contributions)
+- Send Lightning payments (collections)
+- Check balance
+- Generate Lightning address per user
+- Docs: https://sdk-doc-liquid.breez.technology/
+
+### Bitnob
+- Create offramp quote (sats → naira)
+- Initialize and finalize offramp to bank account
+- Detect inbound naira payments via webhook
+- Docs: https://docs.bitnob.com/docs/getting-started
+
+### Mavapay
+- Backup NGN payout rail if Bitnob is slow or unavailable
+- Docs: https://docs.mavapay.co/introduction
+
+### Paystack
+- Detect inbound naira bank transfers
+- Match payment reference to user phone number
+- Trigger Bitnob conversion on confirmed receipt
+
+---
+
+## Database Schema (Key Tables)
+
+```sql
+users           -- phone_number, nostr_pubkey, breez_wallet_id, bank_account
+circles         -- id, name, amount_naira, frequency, size, start_date, nostr_group_id, rules
+memberships     -- circle_id, user_id, slot_number, status, security_deposit_paid
+contributions   -- circle_id, user_id, week_number, amount_naira, sats_amount, nostr_event_id, status
+collections     -- circle_id, user_id, week_number, amount_naira, tx_id, status
+reputation      -- user_id, circles_completed, total_contributions, last_updated
+```
+
+---
+
+## Security Rules
+
+- Nostr nsec never stored on backend servers — device only
+- Never log nsec, private keys, or bank account numbers
+- All API keys in environment variables — never hardcoded
+- Bitnob, Mavapay, and Paystack webhooks must verify signatures
+- OTP expires in 5 minutes
+- Rate limit OTP requests: 3 per phone number per hour
+- Security deposits locked in Breez wallet — never in Ajotribe's accounts
+
+---
+
+## Environment Variables Required
+
+```
+# Breez SDK
+BREEZ_API_KEY=
+
+# Bitnob
+BITNOB_API_KEY=
+BITNOB_WEBHOOK_SECRET=
+
+# Mavapay
+MAVAPAY_API_KEY=
+
+# Paystack
+PAYSTACK_SECRET_KEY=
+PAYSTACK_WEBHOOK_SECRET=
+
+# Database
+DATABASE_URL=
+REDIS_URL=
+
+# App
+JWT_SECRET=
+ENCRYPTION_KEY=
+```
+
+---
+
+## What NOT to Build (Scope Boundaries)
+
+- No AI assistant — post-hackathon roadmap
+- No SMS or push notifications — post-hackathon roadmap
+- No WhatsApp bot — post-hackathon roadmap
+- No USSD — post-hackathon roadmap
+- No microloans or credit products — not part of Ajotribe
+- No crypto exchange or trading features
+- No user-visible Bitcoin or Lightning management
+- No web app — mobile only for v1
+- No multi-currency display — naira only for v1
+
+---
+
+## Demo Day Requirements (Non-Negotiable)
+
+The following must work live on Demo Day with real money:
+
+1. Create a circle in under 3 minutes
+2. 3+ members join via invite link
+3. All members make real naira contributions
+4. Circle dashboard shows contributions in real time
+5. Collection triggers for one member — real naira lands in real bank account within minutes
+
+Everything else can be shown in UI without live transaction.
+
+---
+
+## Build Priority Order
+
+Build in this exact order. Do not skip ahead.
+
+1. Breez SDK wallet initialisation on registration
+2. Circle creation and NIP-29 Nostr group
+3. Member join via invite link
+4. Contribution flow — naira in via Paystack, Bitnob converts to sats, Breez credits wallet
+5. Circle dashboard — real-time contribution status
+6. Collection flow — rotation triggers, Breez sends Lightning, Bitnob converts to naira, bank transfer fires
+7. Reputation — completion badge as Nostr event
+8. UI polish — Pidgin language, naira formatting, Mama Tunde test on every screen
+
+---
+
+## Workflow
+
+1. Always typecheck after a series of changes: `npx tsc --noEmit`
+2. Run lint before committing: `npm run lint`
+3. Test Bitnob and Breez integrations against their sandboxes first
+4. Every external API call must have error handling and a fallback
+5. Every user-facing string must pass the Mama Tunde test before shipping
+6. Commit messages: `feat:`, `fix:`, `chore:`, `docs:` prefixes
+7. Never commit API keys — use .env only

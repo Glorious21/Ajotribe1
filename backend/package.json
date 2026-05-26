@@ -1,0 +1,48 @@
+{
+  "name": "ajotribe-backend",
+  "version": "1.0.0",
+  "description": "Ajotribe backend — digital ajo circle app",
+  "main": "dist/app.js",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/app.ts",
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "db:migrate": "ts-node src/db/migrate.ts",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@breeztech/breez-sdk-liquid": "file:../../../AppData/Local/Temp/breeztech-breez-sdk-liquid-0.12.3-dev1.tgz",
+    "axios": "^1.16.1",
+    "bip39": "^3.1.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.3",
+    "nanoid": "^5.1.11",
+    "node-cron": "^4.2.1",
+    "nostr-tools": "^2.23.5",
+    "pg": "^8.21.0",
+    "socket.io": "^4.8.3",
+    "uuid": "^14.0.0",
+    "ws": "^8.20.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.9.1",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.20.0",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.18.1",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: ajotribe-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node dist/app.js
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ajotribe-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # Set these manually in the Render dashboard:
+      # REDIS_URL          — from Upstash (upstash.com, free tier)
+      # JWT_SECRET         — random 32+ char string
+      # ENCRYPTION_KEY     — 32 bytes hex
+      # PAYSTACK_SECRET_KEY
+      # PAYSTACK_WEBHOOK_SECRET
+      # BITNOB_API_KEY
+      # BITNOB_WEBHOOK_SECRET
+      # MAVAPAY_API_KEY
+      # MAVAPAY_BASE_URL
+      # CASHWYRE_API_KEY
+      # CASHWYRE_BASE_URL
+      # TERMII_API_KEY
+      # TERMII_SENDER_ID   — Ajotribe
+      # NOSTR_RELAYS       — wss://relay.damus.io,wss://nos.lol,wss://relay.primal.net
+      # NOSTR_SERVER_NSEC  — 32-byte hex (generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+      # BREEZ_MNEMONIC    — 12-word BIP39 mnemonic for the server Lightning wallet (generate: node -e "const {generateMnemonic}=require('bip39');console.log(generateMnemonic())")
+      # BREEZ_WORKING_DIR — /opt/render/project/breez-data (or any writable absolute path on Render)
+
+databases:
+  - name: ajotribe-db
+    databaseName: ajotribe
+    plan: free

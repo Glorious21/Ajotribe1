@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Ajotribe",
+    "slug": "ajotribe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "ajotribe",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "ng.ajotribe.app"
+    },
+    "android": {
+      "package": "ng.ajotribe.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#006B3C",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-linking",
+        {
+          "scheme": "ajotribe"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
