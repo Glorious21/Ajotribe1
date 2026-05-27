@@ -13,6 +13,8 @@
     },
     "android": {
       "package": "ng.ajotribe.app",
+      "enableProguardInReleaseBuilds": true,
+      "enableShrinkResourcesInReleaseBuilds": true,
       "adaptiveIcon": {
         "backgroundColor": "#006B3C",
         "foregroundImage": "./assets/android-icon-foreground.png"
