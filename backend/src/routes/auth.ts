@@ -2,8 +2,7 @@ import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db/pool';
-import { redis } from '../db/redis';
-import * as termii from '../services/termii';
+import * as at from '../services/africasTalking';
 import * as paystackSvc from '../services/paystack';
 
 const router = Router();
@@ -33,8 +32,7 @@ router.post('/send-otp', otpLimiter, async (req: Request, res: Response) => {
   }
 
   try {
-    const { pinId } = await termii.sendOtp(phone_number);
-    await redis.setex(`otp:pin:${phone_number}`, 300, pinId);
+    await at.sendOtp(phone_number);
     res.json({ message: 'OTP sent', phone_number });
   } catch (err) {
     console.error('OTP send error:', err);
@@ -51,19 +49,11 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
     return;
   }
 
-  const pinId = await redis.get(`otp:pin:${phone_number}`);
-  if (!pinId) {
-    res.status(400).json({ error: 'OTP don expire — request a new one' });
-    return;
-  }
-
-  const valid = await termii.verifyOtp(pinId, code);
+  const valid = await at.verifyOtp(phone_number, code);
   if (!valid) {
-    res.status(401).json({ error: 'Wrong code — try again' });
+    res.status(401).json({ error: 'Wrong code — try again or request a new one' });
     return;
   }
-
-  await redis.del(`otp:pin:${phone_number}`);
 
   // Upsert user
   const result = await pool.query<{ id: string; display_name: string | null; bank_account: string | null }>(
