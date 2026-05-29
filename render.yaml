@@ -18,25 +18,45 @@ services:
         value: production
       - key: PORT
         value: 10000
-      # Set these manually in the Render dashboard:
-      # REDIS_URL              — from Upstash (upstash.com, free tier)
-      # JWT_SECRET             — random 32+ char string
-      # ENCRYPTION_KEY         — 32 bytes hex
-      # PAYSTACK_SECRET_KEY
-      # PAYSTACK_WEBHOOK_SECRET
-      # BITNOB_API_KEY
-      # BITNOB_BASE_URL        — https://api.bitnob.co/api/v1
-      # MAVAPAY_API_KEY
-      # MAVAPAY_BASE_URL       — https://api.mavapay.co
-      # CASHWYRE_API_KEY
-      # CASHWYRE_BASE_URL      — https://business.cashwyre.com/api
-      # TERMII_API_KEY
-      # TERMII_SENDER_ID       — Ajotribe
-      # NOSTR_RELAYS           — wss://relay.damus.io,wss://nos.lol,wss://relay.primal.net
-      # NOSTR_SERVER_NSEC      — 32-byte hex (node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-      # BREEZ_API_KEY          — from Breez developer portal
-      # BREEZ_MNEMONIC         — 12-word BIP39 mnemonic for the server Lightning wallet
-      # BREEZ_WORKING_DIR      — /opt/render/project/src/backend/breez-data
+      - key: NOSTR_RELAYS
+        value: wss://relay.damus.io,wss://nos.lol,wss://relay.primal.net
+      - key: BITNOB_BASE_URL
+        value: https://api.bitnob.co/api/v1
+      - key: MAVAPAY_BASE_URL
+        value: https://api.mavapay.co
+      - key: CASHWYRE_BASE_URL
+        value: https://business.cashwyre.com/api
+      - key: BREEZ_WORKING_DIR
+        value: /opt/render/project/src/backend/breez-data
+      - key: AT_USERNAME
+        value: sandbox
+      # Secrets — set values in the Render dashboard after first deploy:
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_WEBHOOK_SECRET
+        sync: false
+      - key: BITNOB_API_KEY
+        sync: false
+      - key: BITNOB_WEBHOOK_SECRET
+        sync: false
+      - key: MAVAPAY_API_KEY
+        sync: false
+      - key: CASHWYRE_API_KEY
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: NOSTR_SERVER_NSEC
+        sync: false
+      - key: BREEZ_API_KEY
+        sync: false
+      - key: BREEZ_MNEMONIC
+        sync: false
 
 databases:
   - name: ajotribe-db
