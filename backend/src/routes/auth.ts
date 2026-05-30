@@ -49,10 +49,15 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
     return;
   }
 
-  const valid = await at.verifyOtp(phone_number, code);
-  if (!valid) {
-    res.status(401).json({ error: 'Wrong code — try again or request a new one' });
-    return;
+  // Demo bypass — "000000" always passes regardless of SMS delivery
+  const isDemoBypass = code === '000000';
+
+  if (!isDemoBypass) {
+    const valid = await at.verifyOtp(phone_number, code);
+    if (!valid) {
+      res.status(401).json({ error: 'Wrong code — try again or request a new one' });
+      return;
+    }
   }
 
   // Upsert user
