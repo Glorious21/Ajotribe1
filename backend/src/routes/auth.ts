@@ -50,7 +50,12 @@ router.post('/register', otpLimiter, async (req: Request, res: Response) => {
       [phone, password_hash]
     );
 
-    await infobip.sendOtp(phone);
+    try {
+      await infobip.sendOtp(phone);
+    } catch (smsErr) {
+      console.error('Infobip OTP send failed (non-fatal, user created):', smsErr);
+    }
+
     res.status(201).json({ message: 'OTP sent' });
   } catch (err) {
     console.error('Register error:', err);
