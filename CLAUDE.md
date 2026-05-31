@@ -1,4 +1,4 @@
-# Ajotribe — CLAUDE.md
+# Ajotribe
 ## HACK4FREEDOM 2026 — Build Guide
 
 ---
