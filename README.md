@@ -852,8 +852,10 @@ Cooperative Finance Infrastructure
 
 # Team
 
-Built by Team Ajotribe for Hack4Freedom 2026.
-
+Built by Team Overflow for Hack4Freedom 2026.
+Alabi Ramat - Product Manager 
+Glorious - Backend Developer 
+Oluchi - Frontend Developer 
 Powered by:
 
 - Bitcoin
