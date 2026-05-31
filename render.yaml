@@ -1,0 +1,64 @@
+services:
+  - type: web
+    name: ajotribe-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: node dist/app.js
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ajotribe-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: NOSTR_RELAYS
+        value: wss://relay.damus.io,wss://nos.lol,wss://relay.primal.net
+      - key: BITNOB_BASE_URL
+        value: https://api.bitnob.co/api/v1
+      - key: MAVAPAY_BASE_URL
+        value: https://api.mavapay.co
+      - key: CASHWYRE_BASE_URL
+        value: https://business.cashwyre.com/api
+      - key: BREEZ_WORKING_DIR
+        value: /opt/render/project/src/backend/breez-data
+      - key: AT_USERNAME
+        value: sandbox
+      # Secrets — set values in the Render dashboard after first deploy:
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_WEBHOOK_SECRET
+        sync: false
+      - key: BITNOB_API_KEY
+        sync: false
+      - key: BITNOB_WEBHOOK_SECRET
+        sync: false
+      - key: MAVAPAY_API_KEY
+        sync: false
+      - key: CASHWYRE_API_KEY
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: NOSTR_SERVER_NSEC
+        sync: false
+      - key: BREEZ_API_KEY
+        sync: false
+      - key: BREEZ_MNEMONIC
+        sync: false
+
+databases:
+  - name: ajotribe-db
+    databaseName: ajotribe
+    plan: free
