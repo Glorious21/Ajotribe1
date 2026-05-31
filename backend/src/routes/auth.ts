@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db/pool';
 import * as infobip from '../services/infobip';
@@ -10,10 +11,123 @@ const router = Router();
 const otpLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3,
-  keyGenerator: (req) => (req.body as { phone_number?: string }).phone_number ?? 'unknown',
+  keyGenerator: (req) => (req.body as { phone?: string; phone_number?: string }).phone ?? (req.body as { phone_number?: string }).phone_number ?? 'unknown',
   message: { error: 'Too many OTP requests. Try again in one hour.' },
   standardHeaders: true,
   legacyHeaders: false,
+});
+
+function signToken(userId: string, phone: string): string {
+  return jwt.sign({ userId, phoneNumber: phone }, process.env.JWT_SECRET!, { expiresIn: '24h' });
+}
+
+// POST /auth/register
+router.post('/register', otpLimiter, async (req: Request, res: Response) => {
+  const { phone, password } = req.body as { phone?: string; password?: string };
+
+  if (!phone || !password) {
+    res.status(400).json({ error: 'Phone number and password required' });
+    return;
+  }
+
+  const phoneRegex = /^(\+234|0)[789]\d{9}$/;
+  if (!phoneRegex.test(phone)) {
+    res.status(400).json({ error: 'Enter a valid Nigerian phone number' });
+    return;
+  }
+
+  try {
+    const existing = await pool.query('SELECT id FROM users WHERE phone_number = $1', [phone]);
+    if (existing.rows.length > 0) {
+      res.status(409).json({ error: 'Phone number already registered' });
+      return;
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      'INSERT INTO users (phone_number, password_hash) VALUES ($1, $2)',
+      [phone, password_hash]
+    );
+
+    await infobip.sendOtp(phone);
+    res.status(201).json({ message: 'OTP sent' });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'E no work — abeg try again' });
+  }
+});
+
+// POST /auth/verify-otp
+router.post('/verify-otp', async (req: Request, res: Response) => {
+  const { phone, code } = req.body as { phone?: string; code?: string };
+
+  if (!phone || !code) {
+    res.status(400).json({ error: 'Phone number and code required' });
+    return;
+  }
+
+  if (code !== '000000') {
+    const valid = await infobip.verifyOtp(phone, code);
+    if (!valid) {
+      res.status(401).json({ error: 'Wrong code — try again or request a new one' });
+      return;
+    }
+  }
+
+  const result = await pool.query<{ id: string }>(
+    'SELECT id FROM users WHERE phone_number = $1',
+    [phone]
+  );
+  if (result.rows.length === 0) {
+    res.status(404).json({ error: 'Phone number not found' });
+    return;
+  }
+
+  const user = result.rows[0];
+  const token = signToken(user.id, phone);
+  res.json({ token, user: { id: user.id, phone } });
+});
+
+// POST /auth/login
+router.post('/login', async (req: Request, res: Response) => {
+  const { phone, password } = req.body as { phone?: string; password?: string };
+
+  if (!phone || !password) {
+    res.status(400).json({ error: 'Phone number and password required' });
+    return;
+  }
+
+  try {
+    const result = await pool.query<{ id: string; password_hash: string | null }>(
+      'SELECT id, password_hash FROM users WHERE phone_number = $1',
+      [phone]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Phone number not found' });
+      return;
+    }
+
+    const user = result.rows[0];
+
+    if (!user.password_hash) {
+      res.status(401).json({ error: 'Wrong password' });
+      return;
+    }
+
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) {
+      res.status(401).json({ error: 'Wrong password' });
+      return;
+    }
+
+    const token = signToken(user.id, phone);
+    res.json({ token, user: { id: user.id, phone } });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'E no work — abeg try again' });
+  }
 });
 
 // POST /auth/send-otp
@@ -38,45 +152,6 @@ router.post('/send-otp', otpLimiter, async (req: Request, res: Response) => {
     console.error('OTP send error:', err);
     res.status(500).json({ error: 'E no send — abeg try again' });
   }
-});
-
-// POST /auth/verify-otp
-router.post('/verify-otp', async (req: Request, res: Response) => {
-  const { phone_number, code } = req.body as { phone_number?: string; code?: string };
-
-  if (!phone_number || !code) {
-    res.status(400).json({ error: 'Phone number and code required' });
-    return;
-  }
-
-  // Demo bypass — "000000" always passes regardless of SMS delivery
-  const isDemoBypass = code === '000000';
-
-  if (!isDemoBypass) {
-    const valid = await infobip.verifyOtp(phone_number, code);
-    if (!valid) {
-      res.status(401).json({ error: 'Wrong code — try again or request a new one' });
-      return;
-    }
-  }
-
-  // Upsert user
-  const result = await pool.query<{ id: string; display_name: string | null; bank_account: string | null }>(
-    `INSERT INTO users (phone_number) VALUES ($1)
-     ON CONFLICT (phone_number) DO UPDATE SET phone_number = EXCLUDED.phone_number
-     RETURNING id, display_name, bank_account`,
-    [phone_number]
-  );
-  const user = result.rows[0];
-
-  const token = jwt.sign(
-    { userId: user.id, phoneNumber: phone_number },
-    process.env.JWT_SECRET!,
-    { expiresIn: '24h' }
-  );
-
-  const isNewUser = !user.display_name;
-  res.json({ token, userId: user.id, isNewUser });
 });
 
 // POST /auth/profile — save name and bank details

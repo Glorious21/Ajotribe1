@@ -99,6 +99,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS paystack_customer_code VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS paystack_virtual_account VARCHAR(20);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS paystack_bank_name VARCHAR(100);
 
+-- Password hash for registered users
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(60);
+
 -- Required for ON CONFLICT in paystack webhook upsert
 CREATE UNIQUE INDEX IF NOT EXISTS idx_contributions_unique_round
   ON contributions(circle_id, user_id, round_number);
