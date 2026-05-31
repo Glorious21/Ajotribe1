@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db/pool';
-import * as at from '../services/africasTalking';
+import * as infobip from '../services/infobip';
 import * as paystackSvc from '../services/paystack';
 
 const router = Router();
@@ -32,7 +32,7 @@ router.post('/send-otp', otpLimiter, async (req: Request, res: Response) => {
   }
 
   try {
-    await at.sendOtp(phone_number);
+    await infobip.sendOtp(phone_number);
     res.json({ message: 'OTP sent', phone_number });
   } catch (err) {
     console.error('OTP send error:', err);
@@ -53,7 +53,7 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
   const isDemoBypass = code === '000000';
 
   if (!isDemoBypass) {
-    const valid = await at.verifyOtp(phone_number, code);
+    const valid = await infobip.verifyOtp(phone_number, code);
     if (!valid) {
       res.status(401).json({ error: 'Wrong code — try again or request a new one' });
       return;
