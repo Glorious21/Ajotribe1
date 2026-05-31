@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, RefreshControl, Alert,
+  StyleSheet, RefreshControl, Alert, Modal, TextInput, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '../../lib/api';
@@ -16,11 +16,23 @@ export default function HomeScreen() {
   const { circles, setCircles } = useCircleStore();
   const [refreshing, setRefreshing] = useState(false);
 
+  // Create circle modal
+  const [createVisible, setCreateVisible] = useState(false);
+  const [circleName, setCircleName] = useState('');
+  const [circleAmount, setCircleAmount] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createdInviteCode, setCreatedInviteCode] = useState<string | null>(null);
+
+  // Join circle modal
+  const [joinVisible, setJoinVisible] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joining, setJoining] = useState(false);
+
   async function loadCircles() {
     try {
       const data = await api.get<Circle[]>('/circles');
       setCircles(data);
-    } catch (err) {
+    } catch {
       Alert.alert('E no load', 'Check your connection and pull down to refresh');
     }
   }
@@ -35,6 +47,53 @@ export default function HomeScreen() {
     setRefreshing(false);
   }
 
+  function openCreate() {
+    setCreatedInviteCode(null);
+    setCircleName('');
+    setCircleAmount('');
+    setCreateVisible(true);
+  }
+
+  async function handleCreate() {
+    setCreating(true);
+    try {
+      const result = await api.post<{ circle: { id: string; invite_code: string }; inviteLink: string }>(
+        '/circles',
+        {
+          name: circleName.trim(),
+          amount_naira: parseInt(circleAmount, 10) * 100,
+          frequency: 'weekly',
+          size: 5,
+          start_date: '2026-06-01',
+        }
+      );
+      setCreatedInviteCode(result.circle.invite_code);
+      await loadCircles();
+    } catch (err) {
+      Alert.alert('E no create', err instanceof Error ? err.message : 'Try again');
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleJoin() {
+    setJoining(true);
+    try {
+      const result = await api.post<{ circleId: string; slotNumber: number }>(
+        `/circles/join/${joinCode.trim()}`,
+        {}
+      );
+      setJoinVisible(false);
+      setJoinCode('');
+      await loadCircles();
+      router.push(`/circle/${result.circleId}`);
+    } catch (err) {
+      Alert.alert('E no work', err instanceof Error ? err.message : 'Try again');
+    } finally {
+      setJoining(false);
+    }
+  }
+
   const firstName = displayName?.split(' ')[0] ?? 'Welcome';
 
   return (
@@ -44,12 +103,14 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>How far, {firstName} 👋</Text>
           <Text style={styles.subGreeting}>Your savings dey wait for you</Text>
         </View>
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={() => router.push('/circle/create')}
-        >
-          <Text style={styles.createButtonText}>+ New Circle</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.joinHeaderBtn} onPress={() => setJoinVisible(true)}>
+            <Text style={styles.joinHeaderBtnText}>Join</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.createButton} onPress={openCreate}>
+            <Text style={styles.createButtonText}>+ New Circle</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -58,7 +119,7 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#006B3C" />}
       >
         {circles.length === 0 ? (
-          <EmptyState onPress={() => router.push('/circle/create')} />
+          <EmptyState onCreate={openCreate} onJoin={() => setJoinVisible(true)} />
         ) : (
           circles.map((circle) => (
             <CircleCard
@@ -69,6 +130,100 @@ export default function HomeScreen() {
           ))
         )}
       </ScrollView>
+
+      {/* Create Circle Modal */}
+      <Modal visible={createVisible} transparent animationType="slide">
+        <View style={styles.overlay}>
+          <View style={styles.modal}>
+            {createdInviteCode ? (
+              <>
+                <Text style={styles.modalTitle}>Circle don create! 🎉</Text>
+                <Text style={styles.modalHint}>Share this invite code with your people:</Text>
+                <View style={styles.codeBox}>
+                  <Text style={styles.codeText}>{createdInviteCode}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.modalBtn}
+                  onPress={() => setCreateVisible(false)}
+                >
+                  <Text style={styles.modalBtnText}>Done</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>Create New Circle</Text>
+                <Text style={styles.fieldLabel}>Circle Name</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="E.g. Friday Market Ajo"
+                  placeholderTextColor="#9CA3AF"
+                  value={circleName}
+                  onChangeText={setCircleName}
+                  autoFocus
+                />
+                <Text style={styles.fieldLabel}>Amount per person (₦)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="10000"
+                  placeholderTextColor="#9CA3AF"
+                  value={circleAmount}
+                  onChangeText={(v) => setCircleAmount(v.replace(/\D/g, ''))}
+                  keyboardType="number-pad"
+                />
+                <TouchableOpacity
+                  style={[styles.modalBtn, (creating || !circleName.trim() || !circleAmount) && styles.modalBtnDisabled]}
+                  onPress={handleCreate}
+                  disabled={creating || !circleName.trim() || !circleAmount}
+                >
+                  {creating
+                    ? <ActivityIndicator color="#fff" />
+                    : <Text style={styles.modalBtnText}>Create Circle</Text>
+                  }
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setCreateVisible(false)}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Join Circle Modal */}
+      <Modal visible={joinVisible} transparent animationType="slide">
+        <View style={styles.overlay}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Join a Circle</Text>
+            <Text style={styles.fieldLabel}>Enter invite code</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Ask your organiser for the code"
+              placeholderTextColor="#9CA3AF"
+              value={joinCode}
+              onChangeText={setJoinCode}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={[styles.modalBtn, (joining || !joinCode.trim()) && styles.modalBtnDisabled]}
+              onPress={handleJoin}
+              disabled={joining || !joinCode.trim()}
+            >
+              {joining
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.modalBtnText}>Join Circle 🤝</Text>
+              }
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={() => { setJoinVisible(false); setJoinCode(''); }}
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -111,16 +266,19 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function EmptyState({ onPress }: { onPress: () => void }) {
+function EmptyState({ onCreate, onJoin }: { onCreate: () => void; onJoin: () => void }) {
   return (
     <View style={styles.empty}>
       <Text style={styles.emptyEmoji}>🌿</Text>
       <Text style={styles.emptyTitle}>No circle yet</Text>
       <Text style={styles.emptyDesc}>
-        Create your own circle or ask a friend to share their invite link with you
+        Create your own circle or join one with an invite code
       </Text>
-      <TouchableOpacity style={styles.emptyButton} onPress={onPress}>
+      <TouchableOpacity style={styles.emptyButton} onPress={onCreate}>
         <Text style={styles.emptyButtonText}>Start Your Circle</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.emptyJoinButton} onPress={onJoin}>
+        <Text style={styles.emptyJoinButtonText}>Join a Circle</Text>
       </TouchableOpacity>
     </View>
   );
@@ -139,6 +297,14 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 22, fontWeight: '800', color: '#FFFFFF' },
   subGreeting: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  headerButtons: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  joinHeaderBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 24,
+  },
+  joinHeaderBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   createButton: {
     backgroundColor: '#F4A228',
     paddingHorizontal: 16,
@@ -167,15 +333,75 @@ const styles = StyleSheet.create({
   progressBar: { height: 6, backgroundColor: '#F3F4F6', borderRadius: 3, marginBottom: 8 },
   progressFill: { height: 6, backgroundColor: '#006B3C', borderRadius: 3 },
   progressLabel: { fontSize: 12, color: '#9CA3AF' },
-  empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: 32 },
-  emptyEmoji: { fontSize: 64, marginBottom: 20 },
-  emptyTitle: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  emptyDesc: { fontSize: 15, color: '#6B7280', textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+  empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: 32, gap: 12 },
+  emptyEmoji: { fontSize: 64, marginBottom: 8 },
+  emptyTitle: { fontSize: 22, fontWeight: '700', color: '#111827' },
+  emptyDesc: { fontSize: 15, color: '#6B7280', textAlign: 'center', lineHeight: 22, marginBottom: 8 },
   emptyButton: {
     backgroundColor: '#006B3C',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 16,
+    width: '100%',
+    alignItems: 'center',
   },
   emptyButtonText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  emptyJoinButton: {
+    borderWidth: 1.5,
+    borderColor: '#006B3C',
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 16,
+    width: '100%',
+    alignItems: 'center',
+  },
+  emptyJoinButtonText: { fontSize: 16, fontWeight: '600', color: '#006B3C' },
+
+  // Modals
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 28,
+    paddingBottom: 48,
+    gap: 12,
+  },
+  modalTitle: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 4 },
+  modalHint: { fontSize: 14, color: '#6B7280' },
+  fieldLabel: { fontSize: 14, fontWeight: '600', color: '#374151', marginTop: 4 },
+  modalInput: {
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#111827',
+    backgroundColor: '#FAFAF9',
+  },
+  modalBtn: {
+    backgroundColor: '#006B3C',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  modalBtnDisabled: { backgroundColor: '#9CA3AF' },
+  modalBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  cancelBtn: { alignItems: 'center', paddingVertical: 8 },
+  cancelText: { fontSize: 15, color: '#9CA3AF' },
+  codeBox: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1.5,
+    borderColor: '#16A34A',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+  },
+  codeText: { fontSize: 28, fontWeight: '800', color: '#006B3C', letterSpacing: 2 },
 });
