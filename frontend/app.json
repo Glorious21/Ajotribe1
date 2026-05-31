@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "scheme": "Ajotribe",
+    "name": "Ajotribe",
+    "slug": "Ajotribe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "",
+    "splash": {
+      "backgroundColor": "#5B21B6"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#5B21B6",
+        "foregroundImage": "",
+        "backgroundImage": "",
+        "monochromeImage": ""
+      }
+    },
+    "web": {
+      "favicon": ""
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#5B21B6"
+        }
+      ],
+      "expo-font"
+    ]
+  }
+}
