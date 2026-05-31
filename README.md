@@ -1,10 +1,10 @@
-# Ajofi
+# Ajotribe
 
 ### Community Finance Infrastructure for Everyday Africans
 
-Ajofi is a multilingual AI-powered community finance platform designed for informal African communities — market women, food vendors, artisans, transport workers, cooperative groups, and low-income earners.
+Ajotribe is a multilingual AI-powered community finance platform designed for informal African communities — market women, food vendors, artisans, transport workers, cooperative groups, and low-income earners.
 
-Ajofi digitizes traditional savings circles (Ajo, Esusu, Adashe, Susu) while preserving the trust, community coordination, and financial discipline that already exist within these systems.
+Ajotribe digitizes traditional savings circles (Ajo, Esusu, Adashe, Susu) while preserving the trust, community coordination, and financial discipline that already exist within these systems.
 
 Users interact using familiar language, simple workflows, and community structures, while Bitcoin, Lightning, Breez SDK, and Nostr operate silently in the background as the infrastructure powering trust, transparency, and settlement.
 
@@ -14,7 +14,7 @@ Built for Hack4Freedom 2026.
 
 # Table of Contents
 
-- Why Ajofi Exists
+- Why Ajotribe Exists
 - Problem Statement
 - Market Research & Survey Findings
 - User Personas
@@ -42,7 +42,7 @@ Built for Hack4Freedom 2026.
 
 ---
 
-# Why Ajofi Exists
+# Why Ajotrib Exists
 
 Across Africa, millions of women and informal workers already practice financial discipline through traditional savings systems such as:
 
@@ -65,7 +65,7 @@ However, they still face major challenges:
 - Language barriers
 - Poor access to formal banking
 
-Ajofi exists to preserve what already works while using modern infrastructure to eliminate these limitations.
+Ajotribe exists to preserve what already works while using modern infrastructure to eliminate these limitations.
 
 ---
 
@@ -158,7 +158,7 @@ Many participants:
 
 # Solution Overview
 
-Ajofi is a community finance platform powered by:
+Ajotribe is a community finance platform powered by:
 
 - AI
 - Bitcoin
@@ -852,7 +852,7 @@ Cooperative Finance Infrastructure
 
 # Team
 
-Built by Team Ajofi for Hack4Freedom 2026.
+Built by Team Ajotribe for Hack4Freedom 2026.
 
 Powered by:
 
@@ -863,4 +863,4 @@ Powered by:
 - AI
 
 Financial freedom should not require financial expertise.
-Ajofi makes community finance accessible to everyone.
+Ajotribe makes community finance accessible to everyone.
