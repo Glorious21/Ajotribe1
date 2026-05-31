@@ -42,7 +42,7 @@ Built for Hack4Freedom 2026.
 
 ---
 
-# Why Ajotrib Exists
+# Why Ajotribe Exists
 
 Across Africa, millions of women and informal workers already practice financial discipline through traditional savings systems such as:
 
@@ -208,7 +208,7 @@ Most fintech applications operate exclusively in English.
 
 ### Solution
 
-Ajofi supports:
+Ajotribe supports:
 
 - English
 - Yoruba
